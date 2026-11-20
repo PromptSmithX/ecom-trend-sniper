@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+curl_cffi
+beautifulsoup4
+lxml
+pydantic>=2
+openai>=1.92

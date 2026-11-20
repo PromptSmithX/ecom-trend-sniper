@@ -90,16 +90,19 @@ def parse_old_reddit_dom(html_content: str, subreddit_name: str, category_name: 
         title_elem = thing.find("a", class_="title")
         title = title_elem.get_text(strip=True) if title_elem else ""
 
-        # 4. url: data-permalink nối với https://www.reddit.com
+        # 4. url: data-permalink nối với https://old.reddit.com (Cách 1: Không bị chặn DNS ở Việt Nam)
         permalink = thing.get("data-permalink") or ""
         if permalink:
             if permalink.startswith("http"):
-                post_url = permalink
+                post_url = permalink.replace("https://www.reddit.com", "https://old.reddit.com")
             else:
-                post_url = f"https://www.reddit.com{permalink}"
+                post_url = f"https://old.reddit.com{permalink}"
         elif title_elem and title_elem.get("href"):
             href = title_elem["href"]
-            post_url = f"https://www.reddit.com{href}" if href.startswith("/") else href
+            if href.startswith("http"):
+                post_url = href.replace("https://www.reddit.com", "https://old.reddit.com")
+            else:
+                post_url = f"https://old.reddit.com{href}" if href.startswith("/") else href
         else:
             post_url = ""
 
@@ -211,6 +214,10 @@ def scrape_reddit(reddit_session_cookie: Optional[str] = None) -> List[Dict[str,
                     if "login" in location or "reason=lor2" in location:
                         print("      🛡️ [BỊ CHẶN BỞI LOGIN WALL] Reddit kích hoạt cơ chế `reason=lor2` yêu cầu đăng nhập.")
                         print("         (Gợi ý: Cung cấp cookie 'reddit_session' bằng cách đặt biến môi trường REDDIT_SESSION hoặc qua tham số --cookie)")
+                    blocked_requests += 1
+
+                elif status_code == 404:
+                    print(f"      ❌ [HTTP 404 Not Found] Subreddit 'r/{sub}' không tồn tại hoặc đã bị khóa/xóa.")
                     blocked_requests += 1
 
                 elif status_code == 403:
